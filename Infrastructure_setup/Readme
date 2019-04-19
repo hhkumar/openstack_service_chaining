@@ -1,0 +1,5 @@
+This section covers the infrastructure setup component of the test environment. It covers:
+
+1.  OpenStack installation
+2.  Setting up Grafana, Prometheus, and Node Exporter on the server running OpenStack.
+3.  Adding routing policies on the server to direct traffic into and out of the service chain.
