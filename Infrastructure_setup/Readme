@@ -3,3 +3,4 @@ This section covers the infrastructure setup component of the test environment. 
 1.  OpenStack installation
 2.  Setting up Grafana, Prometheus, and Node Exporter on the server running OpenStack.
 3.  Adding routing policies on the server to direct traffic into and out of the service chain.
+4.  Create and deploy images in the OpenStack Environment that will be used to create VNF instances.
