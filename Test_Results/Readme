@@ -1,0 +1,56 @@
+This section consists of the test results obtained by subjecting different kinds of traffic through various combinations of service chains.
+
+The following VNFs were used for constructing the service chain:
+1.  Firewall - Juniper vSRX
+2.  Router - Cisco CSR 1000v (AX license obtained from Cisco website)
+3.  NAT - VYOS (Vyatta based Network OS)
+
+Service Chain Combinations:
+1.  NAT
+2.  Router
+3.  Firewall
+4.  Router - NAT
+5.  Firewall - NAT
+6.  Router - Router
+7.  Firewall - Router
+8.  Firewall - Router - NAT
+9.  Router - Router - Router
+10. Router - Router - Router - Router
+11. Router - Router - Router - Router - Router
+
+Parameters collected:
+
+Server:
+1.  CPU Utilization (%)
+2.  Memory Utilization (%)
+3.  CPU Load 1 m(%)
+4.  CPU Load 5 m(%)
+
+Service Chain:
+1.  Latency
+2.  TCP Throughput
+3.  TCP Stream Throughput
+4.  UDP Datagram Loss (%)
+
+VNF Statistics:
+1.  CPU Utilization (%)
+2.  Disk Usage (Bytes)
+3.  Disk Allocation (Bytes)
+4.  Disk Size (GB)
+5.  Disk Capacity (GB)
+6.  VCPUs (Count)
+7.  Memory (MB)
+8.  Ephemeral Size (GB)
+
+Testing procedure (Steps 3-10 automated using service_chain.py) :
+1.  Collect baseline statistics (when no traffic is passed through the chain) of the server for 1 hour after deploying OpenStack.
+2.  Deploy required service chain.
+3.  Collect baseline statisctics of the server and individual VNFs for 1 hour.
+4.  Pass TCP traffic continuously through the service chain for 1 hour.
+5.  Collect server and VNF statistics.
+6.  Let server cooldown for 15 minutes and collect baseline statistics of server and VNFs.
+7.  Pass 100 parallel TCP streams continuously through the service chain for 1 hour.
+8.  Repeat steps 5-6.
+9.  Pass TCP traffic continuously through the service chain for 1 hour.
+10. Repeat steps 5-6.
+11. Repeat steps 2-10 with new service chain.
