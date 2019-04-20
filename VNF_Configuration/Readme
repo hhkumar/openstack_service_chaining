@@ -1,0 +1,4 @@
+The folder contains initial configuration required for each Virtual Network Function.
+Cisco CSR Routerimage requires installation of license along with routes to handle forward and reverse traffic.
+Juniper VSRX Firewall require security policies along with routes.
+VyOS NAT requires masquerade rules for performing source NAT along with routes.
