@@ -1,3 +1,53 @@
+"""
+University of Colorado Boulder
+
+Project Team:
+Dashmeet Singh Anand          Email: daan9363@colorado.edu
+Hariharakumar Narasimhakumar  Email: hana88349@colorado.edu
+Rohit Dilip Kulkarni          Email: roku1038@colorado.edu
+Sarang Ninale                 Email: sani1268@colorado.edu
+
+Network Diagram:
+Iperf3 Client --> Openstack Server --> Iperf3 Server
+	[c]		[OS]		[S]
+Software Dependencies:
+1. Iperf3 [c][s]
+2. Ping	[c]
+3. OpenStack Gnnochi [os]
+4. Node Metric - Promethius [os]
+
+Run Procedure:
+1. Start the Iperf3 Server.
+2. Ensure ICMP, TCP and UDP across the service chain.
+3. Ensure traffic rules hold for 1Hr or test_time specified. (Specially in firewalls)
+4. Start the test.
+
+Global Variables:
+testing_time:		Time for testing the service chain and collection of metrics.
+sleep_time: 		Time between each test for cool down.
+iperf_server:		Address for the iperf server.
+openstack_server: 	Address for the openstack deployed server. 
+server_promethius:	Promethius datasource for node_exporter metrics.
+Keystone:		For collecting Gnnochi metrics.
+
+Arguments required:
+Name: 	
+	Test name for storing the results.
+-b --baseline:
+	Test the baseline parameters of the server for previous 1 Hr.
+-t --tcp:
+	Sends tcp traffic for testing_time. 
+-s --stream:
+	Send tcp with 100 parallel stream for testing_time.
+-u --udp:
+	Sends UDP packets for testing_time.
+-l --latency:
+	Checks the latency for the across the client and server.
+-a --all:
+	Test Latency -> TCP -> TCP-Stream -> UDP of network.
+-w --wait:
+	Sleeps for 1 Hr.
+"""
 import requests
 import time
 from prettytable import PrettyTable
@@ -16,6 +66,12 @@ from novaclient import client as nova_client
 
 
 def request_calls(url):
+	"""
+	Requesting different parameters from HTTP calls		
+	url: [string] : poinitng to the promethius server.
+	Return:
+		data_points: returns list of data metrics.
+	"""
 	r=requests.get(url)
 	r=r.json()
 	data_values=r['data']['result'][0]['values']
@@ -25,6 +81,14 @@ def request_calls(url):
 	return(data_points)
 
 def calc_min_max_avg(data_points):
+	"""
+	Calculations of Maximum, Minimum and Average from a string of floats.
+	data_points: [list] : float list of metric collected.
+	Return:
+		max_var: Maximum value of list.
+		min_var: Minimum value of list.
+		avg: Avergage value.
+	"""
 	max_var=round(max(data_points),2)
 	min_var=round(min(data_points),2)
 	sum_var=sum(data_points)
@@ -33,6 +97,12 @@ def calc_min_max_avg(data_points):
 	return (max_var,min_var,avg)
 
 def server_metrics():
+	"""
+	Fetching metrics from promethius server.
+	Return:
+		srv_pt: pretty table output for the server metric collected.
+	"""
+	
 	global server_promethius
 	global start_time
 	global end_time
@@ -68,15 +138,13 @@ def server_metrics():
 
 	return (srv_pt)
 
-def calc_min_max_avg(data_points):
-	max_var=round(max(data_points),2)
-	min_var=round(min(data_points),2)
-	sum_var=sum(data_points)
-	count=len(data_points)
-    	avg=round((sum_var/count),2)
-    	return (max_var,min_var,avg)
-
 def latency_testing():
+	"""
+	Perform RTT ping between the server and client.
+	Writes data on file.
+	Return:
+		True/False: [boolean]: Test completed.  
+	"""
 	global start_time
 	global end_time
 	global testing_time
@@ -96,6 +164,10 @@ def latency_testing():
 	return (True)
 	
 def tcp_testing():
+	"""
+	Performs Iperf3 TCP testing.
+	Writes data on a file. 
+	"""
 	global start_time
 	global end_time
 	global testing_time
@@ -116,6 +188,10 @@ def tcp_testing():
 	write_data("Iperf TCP testing",str(perf_pt))
 	
 def stream_testing():
+	"""
+	Performs Iperf3 TCP stream testing with 100 parallel connections.
+	Writes data on a file. 
+	"""
 	global start_time
 	global end_time
 	global testing_time
@@ -137,6 +213,10 @@ def stream_testing():
 	return (True)
 	
 def udp_testing():
+	"""
+	Performs Iperf3 UDP testing.
+	Writes data on a file. 
+	"""
 	global start_time
 	global end_time
 	global testing_time
@@ -162,6 +242,12 @@ def udp_testing():
 	return (True)
 
 def test_details(data):
+	"""
+	Collects testing detsils from output.
+	data: [string] input from iperf3 tests of TCP and TCP streams.
+	Return:
+		traffic_detail: [string] : start time, end time, protocol and streams.
+	"""
 	global start_time
 	global end_time	
 	protocol = re.findall(r'Starting Test: protocol: (.*), \d{1,3} streams',data)[0]
@@ -175,6 +261,12 @@ def test_details(data):
 	return (traffic_details)
 
 def bandwidth_details_tcp(data):
+	"""
+	Collects bandwidth data from tcp data. 
+	data: [string] input from iperf3 tests of TCP and TCP streams.
+	Return:
+		bandwidth: [list] : floating values of the BW in test output.
+	"""
 	bandwidth=re.findall(r'  (\d{1,3}.\d{1,3}) Mbits/sec .*Bytes',data)
 	if bandwidth != []:
 	    for i,val in enumerate(bandwidth):
@@ -185,6 +277,12 @@ def bandwidth_details_tcp(data):
 	return (bandwidth)
 
 def bandwidth_details_udp(data):
+	"""
+	Collects bandwidth details of UDP data.
+	data: [string] input from iperf3 tests of UDP.
+	Return:
+		bandwidth: [list] : floating values of the BW in test output.
+	"""
 	bandwidth=re.findall(r'  (\d{1,3}.\d{1,3}) Mbits/sec',data)
 	if bandwidth != []:
 	    del bandwidth[-1:] #deletes for summary lines
@@ -196,10 +294,21 @@ def bandwidth_details_udp(data):
 	return (bandwidth)
 
 def loss_summary(data):
+	"""
+	Collectes  the loss in UDP from the test results. 
+	data: [string] input from iperf3 tests of UDP.
+	Return:
+		loss: str : % value of datagram loss in UDP.
+	"""
 	loss = re.findall(r'\((.*?)\)',data)[0]
 	return (loss)
 
 def gnnochi_matrics():
+	"""
+	Collects Gnnochi metrics from OpenStack servers.
+	Return:
+		output_tables: str : Pretty table output of gnnochi metrics collected.
+	"""
 	global keystone
 	global sess
 	global instance_db
@@ -244,6 +353,11 @@ def gnnochi_matrics():
 	return (output_tables)
 
 def nova_list():
+	"""
+	Collects the complete list of VNF IDs deployed in the OpenStack environment.
+	Return:
+		instance_db: [dictionary]: VNF name and the ID is updated in global variable. 
+	"""
 	global instance_db
 	nova = nova_client.Client(2, session=sess)
 	#print (nova.servers.list())
@@ -251,6 +365,11 @@ def nova_list():
 		instance_db[server.name]=server.id
 
 def fetch_metrics(addpfix=""):
+	"""
+	Synchronizing the complete metric collections.
+	writes data on files for logging. 
+	addpfix: [string] adds the prefix provided by the user.
+	"""
 	global server_promethius
 	global auth
 	global sess
@@ -287,7 +406,11 @@ def fetch_metrics(addpfix=""):
 		write_data(prefix+" Gnnochi Metric","Error")
 
 def sleep_monitor(sleep_time):
-        for remaining in range(sleep_time, 0, -1):
+	"""
+	Interactive screen for monitoring the sleep times 
+	sleep_time: [int]: time values in second.
+	"""
+	for remaining in range(sleep_time, 0, -1):
                 sys.stdout.write("\r")
                 sys.stdout.write("Cooldown countdown: {} ".format(remaining))
                 sys.stdout.flush()
@@ -296,6 +419,11 @@ def sleep_monitor(sleep_time):
 
 
 def write_data(heading,data):
+	"""
+	Function to write the  test data onto a file. 
+	heading: [str] prefix to be added to file name.
+	data: [str] data to be written.
+	"""
 	global test_name
 	global start_time
 	global end_time
@@ -313,6 +441,9 @@ def write_data(heading,data):
 	return (True)
 
 def all_test():
+	"""
+	Synchronizing the complete test when --all is given.
+	"""
 	global test_name
 	global sleep_time
 	global start_time
